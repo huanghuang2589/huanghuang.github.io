@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>收尾人档案编辑器</title>
+    <style>
+        :root {
+            --bg: #0d0e12;
+            --panel: #16181d;
+            --input-bg: #22252c;
+            /* 默认品质颜色-绿 */
+            --theme-color: #45a29e;
+            --theme-glow: #66fcf1;
+        }
+
+        /* 颜色主题库 */
+        .quality-green { --theme-color: #45a29e; --theme-glow: #66fcf1; }
+        .quality-blue { --theme-color: #3498db; --theme-glow: #5dade2; }
+        .quality-purple { --theme-color: #9b59b6; --theme-glow: #af7ac5; }
+        .quality-gold { --theme-color: #f1c40f; --theme-glow: #f4d03f; }
+
+        body {
+            background-color: var(--bg);
+            color: #e0e2e4;
+            font-family: 'Segoe UI', 'PingFang SC', sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .main-layout {
+            width: 100%;
+            max-width: 600px;
+            background: var(--panel);
+            border-top: 4px solid var(--theme-color);
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            padding: 20px;
+        }
+
+        .header-edit {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input, select, textarea {
+            background: var(--input-bg);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+            padding: 8px;
+            border-radius: 4px;
+            outline: none;
+        }
+
+        input:focus { border-color: var(--theme-color); }
+
+        .section-title {
+            color: var(--theme-color);
+            font-size: 14px;
+            font-weight: bold;
+            margin: 20px 0 10px;
+            border-left: 3px solid var(--theme-color);
+            padding-left: 10px;
+            text-transform: uppercase;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            font-size: 12px;
+            color: #8b8f94;
+        }
+
+        .stat-item input { margin-top: 5px; font-size: 16px; text-align: center; }
+
+        /* 抗性表格 */
+        .res-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .res-table th { padding: 8px; color: #8b8f94; font-weight: normal; }
+        .res-table td { padding: 5px; border: 1px solid rgba(255,255,255,0.05); }
+        .res-table select { width: 100%; border: none; background: transparent; cursor: pointer; }
+
+        /* 动态列表样式 */
+        .list-container { display: flex; flex-direction: column; gap: 10px; }
+        .item-row {
+            display: flex;
+            gap: 8px;
+            background: rgba(255,255,255,0.03);
+            padding: 10px;
+            border-radius: 6px;
+            position: relative;
+        }
+
+        .btn-del {
+            background: #ff5252;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 0 8px;
+        }
+
+        .add-btn {
+            background: transparent;
+            border: 1px dashed var(--theme-color);
+            color: var(--theme-color);
+            padding: 10px;
+            margin-top: 10px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: 0.3s;
+        }
+        .add-btn:hover { background: rgba(69, 162, 158, 0.1); }
+
+        .export-area {
+            margin-top: 30px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .btn-main {
+            background: var(--theme-color);
+            color: #000;
+            border: none;
+            padding: 15px 40px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            box-shadow: 0 0 15px var(--theme-glow);
+            transition: 0.3s;
+        }
+
+        .btn-main:hover { transform: scale(1.05); filter: brightness(1.1); }
+
+        /* 移动端优化 */
+        @media (max-width: 480px) {
+            .grid-3 { grid-template-columns: 1fr; }
+            .item-row { flex-direction: column; }
+        }
+    </style>
+</head>
+<body class="quality-green">
+
+    <div class="main-layout">
+        <!-- 头部信息区 -->
+        <div class="header-edit">
+            <input type="text" id="char-name" placeholder="名字：九阶收尾人" style="flex: 2; font-size: 18px;">
+            <select id="char-quality" onchange="updateTheme(this.value)" style="flex: 1;">
+                <option value="green">绿卡</option>
+                <option value="blue">蓝卡</option>
+                <option value="purple">紫卡</option>
+                <option value="gold">金卡</option>
+            </select>
+        </div>
+
+        <!-- 基础数值 -->
+        <div class="grid-3">
+            <div class="stat-item">血量<input type="number" id="hp" value="40"></div>
+            <div class="stat-item">混乱值<input type="number" id="stagger" value="20"></div>
+            <div class="stat-item">光芒(初/最)<div style="display:flex; gap:2px;"><input type="number" id="light-init" value="3" style="width:50%"><input type="number" id="light-max" value="4" style="width:50%"></div></div>
+        </div>
+
+        <!-- 抗性设置 -->
+        <div class="section-title">抗性设置</div>
+        <table class="res-table">
+            <tr>
+                <th>类型</th><th>斩击</th><th>突刺</th><th>打击</th>
+            </tr>
+            <tr id="res-phy">
+                <td>物理</td>
+                <td><select><option>一般</option><option>脆弱</option><option>致命</option><option>耐性</option><option>免疫</option></select></td>
+                <td><select><option>一般</option><option>脆弱</option><option>致命</option><option>耐性</option><option>免疫</option></select></td>
+                <td><select selected="脆弱"><option>一般</option><option selected>脆弱</option><option>致命</option><option>耐性</option><option>免疫</option></select></td>
+            </tr>
+            <tr id="res-stg">
+                <td>混乱</td>
+                <td><select><option>一般</option><option selected>脆弱</option><option>致命</option><option>耐性</option><option>免疫</option></select></td>
+                <td><select><option>一般</option><option selected>脆弱</option><option>致命</option><option>耐性</option><option>免疫</option></select></td>
+                <td><select><option selected>一般</option><option>脆弱</option><option>致命</option><option>耐性</option><option>免疫</option></select></td>
+            </tr>
+        </table>
+
+        <!-- 战斗书页动态区域 -->
+        <div class="section-title">战斗书页</div>
+        <div id="page-list" class="list-container">
+            <!-- 初始行 -->
+            <div class="item-row">
+                <input type="text" placeholder="书页名" style="flex:1" value="快速攻击">
+                <input type="text" placeholder="数值/效果" style="flex:1.5" value="2~4 突刺">
+                <input type="number" placeholder="光耗" style="width:50px" value="1">
+                <button class="btn-del" onclick="this.parentElement.remove()">×</button>
+            </div>
+        </div>
+        <button class="add-btn" onclick="addCombatPage()">+ 添加战斗书页</button>
+
+        <!-- 被动能力动态区域 -->
+        <div class="section-title">被动能力</div>
+        <div id="passive-list" class="list-container">
+            <div class="item-row">
+                <textarea placeholder="输入被动能力描述..." style="flex:1; height:40px;"></textarea>
+                <button class="btn-del" onclick="this.parentElement.remove()">×</button>
+            </div>
+        </div>
+        <button class="add-btn" onclick="addPassive()">+ 添加被动能力</button>
+
+        <div class="export-area">
+            <button class="btn-main" onclick="exportFinal()">导出并复制到剪贴板</button>
+        </div>
+    </div>
+
+    <script>
+        // 主题切换
+        function updateTheme(val) {
+            document.body.className = 'quality-' + val;
+        }
+
+        // 动态添加战斗书页
+        function addCombatPage() {
+            const container = document.getElementById('page-list');
+            const row = document.createElement('div');
+            row.className = 'item-row';
+            row.innerHTML = `
+                <input type="text" placeholder="书页名" style="flex:1">
+                <input type="text" placeholder="效果/冷却" style="flex:1.5">
+                <input type="number" placeholder="光耗" style="width:50px" value="0">
+                <button class="btn-del" onclick="this.parentElement.remove()">×</button>
+            `;
+            container.appendChild(row);
+        }
+
+        // 动态添加被动
+        function addPassive() {
+            const container = document.getElementById('passive-list');
+            const row = document.createElement('div');
+            row.className = 'item-row';
+            row.innerHTML = `
+                <textarea placeholder="输入被动能力描述..." style="flex:1; height:40px;"></textarea>
+                <button class="btn-del" onclick="this.parentElement.remove()">×</button>
+            `;
+            container.appendChild(row);
+        }
+
+        // 核心导出逻辑
+        function exportFinal() {
+            const name = document.getElementById('char-name').value || "未命名收尾人";
+            const quality = document.getElementById('char-quality').options[document.getElementById('char-quality').selectedIndex].text;
+            const hp = document.getElementById('hp').value;
+            const stg = document.getElementById('stagger').value;
+            const lInit = document.getElementById('light-init').value;
+            const lMax = document.getElementById('light-max').value;
+
+            // 获取抗性
+            const getRes = (id) => {
+                const selects = document.querySelectorAll(`#${id} select`);
+                return `斩击：${selects[0].value}  突刺：${selects[1].value}  打击：${selects[2].value}`;
+            };
+
+            // 获取书页
+            let pagesText = "";
+            document.querySelectorAll('#page-list .item-row').forEach((row, i) => {
+                const inputs = row.querySelectorAll('input');
+                pagesText += `[${i+1}] ［${inputs[0].value}］${inputs[1].value} 光芒消耗${inputs[2].value}\n`;
+            });
+
+            // 获取被动
+            let passivesText = "";
+            document.querySelectorAll('#passive-list .item-row').forEach((row) => {
+                const txt = row.querySelector('textarea').value;
+                if(txt) passivesText += `• ${txt}\n`;
+            });
+
+            const finalString = `名字：${name} ［品质：${quality}］
+血量：${hp} 混乱值：${stg}
+初始光芒：${lInit}
+最大光芒：${lMax}
+
+物理伤害抗性:
+${getRes('res-phy')}
+
+混乱伤害抗性:
+${getRes('res-stg')}
+
+战斗书页:
+${pagesText}
+被动能力:
+${passivesText || "无"}`;
+
+            // 复制到剪贴板
+            navigator.clipboard.writeText(finalString).then(() => {
+                alert("导出成功！已按照范例排版复制到剪贴板。");
+            });
+        }
+    </script>
+</body>
+</html>
